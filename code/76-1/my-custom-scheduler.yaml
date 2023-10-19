@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-custom-scheduler
+  namespace: kube-system
+spec:
+  containers:
+    - image: k8s.gcr.io/kube-scheduler-amd64:v1.11.3
+      name: kube-scheduler
+      command:
+        - kube-scheduler
+        - --address=127.0.0.1
+        - --kubeconfig=/etc/kubernetes/scheduler.conf # the path to the scheduler conf file that has the authentication info to connect to the k8s-apiserver
+
+        # custom kube scheduler config file(in code, the file is next to this file, we're assuming it's in the specified path below)
+        # Note: How is this file passed into the deployment(we create a deployment for custom scheduler)?
+        # A: You can either create this file locally and then pass it in as a volume mount as it's done for the other pods usually, or create a configMap
+        # and pass it as `volume` and the contents of that configMap is mapped to a volumeMount.
+        - --config=/etc/kubernetes/my-scheduler-config.yaml

@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: monitoring-daemon
+spec:
+  selector: # ensure the labels in the selector matches the ones in the pod template
+    matchLabels:
+      app: monitoring-agent
+  template: # pod specification template
+    metadata:
+      labels:
+        app: monitoring-agent
+    spec:
+      containers:
+        - name: monitoring-agent
+          image: monitoring-agent
