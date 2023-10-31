@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: random-number-generator
+spec:
+  containers:
+    - image: alpine
+      name: alpine
+      command: ["/bin/sh", "-c"]
+      args: ["shuf -i O-100 -n 1 >> /opt/number.out;"]
+      volumeMounts:
+        - mountPath: /opt
+          name: data-volume
+
+  volumes:
+    - name: data-volume
+
+      # Use a directory on the host. Any file created in the volume, would be stored in the specified folder on the node
+      hostPath:
+        path: /data
+        type: Directory
+
+    # or:
+#    - name: data-volume
+#      awsElasticBlockStore:
+#        volumeID: <volume-id>
+#        fsType: ext4
