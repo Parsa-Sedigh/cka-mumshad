@@ -271,11 +271,65 @@ storage on the end storage device.
 A third option is `recycle`. In this case, the data in the data volume will be scrubbed before making it available to other claims.
 
 ## 188 - Using PVCs in PODs
+Once you create a PVC use it in a POD definition file by specifying the PVC Claim name under persistentVolumeClaim section in the volumes section like
+in 188-1.
+
+The same is true for ReplicaSets or Deployments. Add this to the pod template section of a Deployment on ReplicaSet.
+
+Reference URL: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volumes
+
 ## 189 - Practice Test Persistent Volumes and Persistent Volume Claims
 ## 190 - Solution Persistent Volumes and Persistent Volume Claims
 ## 191 - Application Configuration
+We discussed how to configure an application to use a volume in the "Volumes" lecture using volumeMounts. This along with
+the practice test should be sufficient for the exam.
+
 ## 192 - Additional Topics
+Additional topics such as StatefulSets are out of scope for the exam. However, if you wish to learn them, they are covered in the 
+Certified Kubernetes Application Developer (CKAD) course.
+
+## 193 - Storage Class
+We talked about how to create PVs and then create PVCs to claim that storage and then use the PVCs in the pod definition files as volumes.
+
+![](../img/193-1.png)
+
+In the previous image, we create a PVC from a google cloud persistent disk. The problem here is that before the PV is created,
+you must have created the disk on google cloud. Everytime an application requires storage, you have to first manually provision the disk
+on google cloud and then manually create a PV definition file using the same name as that of the disk that you created. That's called
+**static provisioning volumes**.
+```shell
+gcloud beta compute disks create --size 1GB --region us-east1 pd-disk
+```
+
+It would've been nice if the volume gets provisioned automatically when the application requires it and that's where storage classes come in.
+
+With storage classes, you can define a provisioner such as google storage, that can automatically provision storage on google cloud and attach
+that to pods when a claim is made. That's called **dynamic provisioning of volumes**. Create a storage class(sc) object for this.
+
+Going back to our original state where we have a pod using a PVC for it's storage and the PVC is bound to a PV, we now have a storage class.
+So we no longer need the PV definition, because the PV and any associated storage is going to be created automatically when the storage class
+is created.
+![](../img/193-2.png)
+
+For the PVC to use the storage class we defined, specify storageClassName in the PVC definition, that's how the PVC knows which storage class
+to use.
+
+Nex time a PVC is created, the storage class associated with it, uses the defined provisioner to provision a new disk with the required
+size on GCP and then creates a PV and then binds the PVC to that volume.
+
+So remember that it still creates a PV, it's just that you don't have to manually create PV anymore. It's created automatically by the storage class.
+![](../img/193-3.png)
+
+You can create different storage classes each using different types of disks.
+![](../img/193-4.png)
+
+For example, a silver storage class, with the standard disk, a gold class with SSD drives and a platinum class with SSD drives and replication and
+that's why it's called storage class. You can create different classes of service.
+![](../img/193-5.png)
+
+Next time you create a PVC, you can specify the class of storage you need for your volumes.
 
 ## 194 - Practice Test Storage Class
-## 193 - Storage Class
+Practice Test - https://uklabs.kodekloud.com/topic/practice-test-storage-class-3/
+
 ## 195 - Solution Storage Class

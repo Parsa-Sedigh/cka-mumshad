@@ -1,0 +1,10 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: google-storage
+provisioner: kubernetes.io/gce-pd
+
+# with each of the provisioners, you can pass in additional parameters, such as the type of disk to provision, the replication-type and ... .
+parameters:
+  type: pd-standard
+  replication-type: none
