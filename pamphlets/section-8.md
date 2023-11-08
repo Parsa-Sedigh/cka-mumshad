@@ -213,8 +213,69 @@ For example, to configure an aws elastic block store volume as the storage optio
 `awsElasticBlockStore` and in there, specify volumeID and fsType. The volume storage will now be on aws ebs.
 
 ## 186 - Persistent Volumes
+When we created volumes in the last vid, we configured them within the pod definition file. So every config info required to configure storage for the
+volume, goes within the pod definition file. We use `volumes` property in pod definition file for this.
+
+But when we have a lot of pods, the users would have to configure storage everytime for each pod. Everytime there are changes to be made,
+the user would have to make them on all of this pods. Instead, we would like to manage storage more centrally. We would like it to be
+configured in a way that an administrator can create a large pool of storage and then have users crave out pieces from it as required.
+This is where persistent volumes help us.
+
+A persistent volume is a cluster-wide pool of storage volumes configured by an admin to be used by users deploying applications on the cluster.
+The users can now select storage from this pool using persistent volume claims.
+
+`accessModes` defines how a volume should be mounted on the hosts.
+
+capacity defines the amount of storage to be reserved for this persistent volume.
+
+`hostpath` uses storage from the nodes local directory
+
+Do not use `hostPath` in a production environment.
+
+We can replace `hostPath` option with one of the supported storage solutions like `awsElasticBlockStore`.
+
 ## 187 - Persistent Volume Claims
+### Binding
+An admin creates a set of persistent volumes and a user creates persistent volume claims to use the storage. Once the PVCs are created,
+k8s binds the PVs to claims based on the request and properties set on the volume. Every PVC is bound to a single PV. During the binding
+process, k8s tries to find a PV that has sufficient capacity as requested by the claim and also any other properties such as access modes,
+volume modes, storage class and ... (so it tries to find a PV that has sufficient capacity and the mentioned factors). However, if there are
+multiple possible matches for a single claim and you would like to specifically use a particular volume, you could still use labels and selectors
+to bind to the right volumes.
+
+Note that a smaller claim may get bound to a larger volume if all the other criteria matches and there are no better options(the slide that
+the smaller orange pvc got bound to larger white PV)
+
+There is a one to one relationship between claims and volumes, so no other claims can utilize the remaining capacity in the volume(again look
+at the slide with orange pvc and white pv, no other pvc can utilize the remaining of pv).
+
+if there are no volumes available, the PVC will remain in a pending state until newer volumes are made available to the cluster. Once newer
+volumes are available, the claim would automatically be bound to the newly available volume.
+
+### Persistent volume claim
+Look at the slide where the definition files of pvc and pv are next to each other:
+
+When the claim is created, k8s looks at the volume created previously(pv-definition.yaml). The access modes match,
+the capacity requested is 500 megabytes, but the volume is configured with 1Gi of storage. Since there are no other volumes available,
+the PVC is bound to the PV. So now the `myclaim` PVC is in `Bound` `STATUS`.
+
+### Delete PVCs
+What happens to the underlying PV when the claim(PVC) is deleted?
+
+You can choose what is to happen to the volume! By default, is is set to `Retain`(persistentVolumeReclaimPolicy: Retain) meaning the PV
+will remain until it is **manually** deleted by the admin. Is is not available for reuse by any other claims. 
+
+We can also set the PV to be deleted **automatically**(`Delete`). This way, as soon as the claim is deleted, the volume will be deleted as well. Thus, freeing up
+storage on the end storage device.
+
+A third option is `recycle`. In this case, the data in the data volume will be scrubbed before making it available to other claims.
+
 ## 188 - Using PVCs in PODs
 ## 189 - Practice Test Persistent Volumes and Persistent Volume Claims
 ## 190 - Solution Persistent Volumes and Persistent Volume Claims
 ## 191 - Application Configuration
+## 192 - Additional Topics
+
+## 194 - Practice Test Storage Class
+## 193 - Storage Class
+## 195 - Solution Storage Class
