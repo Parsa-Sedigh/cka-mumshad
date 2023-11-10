@@ -46,7 +46,7 @@ command:
 git clone https://github.com/kubernetes-incubator/metrics-serve
 
 # This command deploys a set of pods, services and roles to enable metrics server to poll for performance metrics from the nodes in the cluster.
-kubect] create -f deploy/1.8+/
+kubectl create -f deploy/1.8+/
 ```
 
 ### View

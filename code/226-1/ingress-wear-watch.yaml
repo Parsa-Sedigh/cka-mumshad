@@ -1,0 +1,26 @@
+# handle all traffic coming into our cluster by requesting my-online-store.com and route them based on the url path. So we just
+# need a single url for this, since we're only handling traffic to a single domain name which is my-online-store.com in this case.
+# Note: The code in slides are for older version.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-wear-watch
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /wear
+            backend:
+              service:
+                name: wear-service
+                port:
+                  number: 80
+            pathType: Prefix
+
+          - path: /watch
+            backend:
+              service:
+                name: watch-service
+                port:
+                  number: 80
+            pathType: Prefix

@@ -1,0 +1,10 @@
+apiVersion: networking.k8s.io/v1 # in course(old version of k8s), this is: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-wear
+spec:
+  defaultBackend: # in course, this is: backend
+    service: # in course, serviceName
+      name: wear-service
+      port: # in course, servicePort
+        number: 80
