@@ -21,49 +21,67 @@ on them and ... .
 
 The master node does all of this, using a set of components together known as the control plane components.
 
-### ETCD cluster
+**Note:** Control plane node(s) = the node(s) that run the control plane components (often multiple in HA/production setups).
+So the control plane nodes are the same as master nodes
+
+### control plane components
+
+#### ETCD cluster
 We need to maintain info about the different ships, what container is on which ship and what time it was loaded and ... . All of these are stored
 in a highly available key-value store, known as ETCD.
 
-### Schedulers(kube-scheduler)
+#### Schedulers(kube-scheduler)
 When cargo ships(worker nodes) arrive, the cargo ship(master node) loads containers on them using cranes. The cranes identify the containers
 that need to be placed on ships. It identifies the right cargo ship based on it's size, it's capacity, the number of containers already on the ship and
 any other conditions such as the destination of the ship, the type of containers it is allowed to carry and ... . Those are schedulers
-in a k8s cluster. A scheduler identifies the right node to place a container on, based on the containers resource requirements, the worker nodes capacity
+in a k8s cluster. **A scheduler identifies the right node to place a container on**, based on the containers resource requirements, the worker nodes capacity
 or any other policies or constraints such as taints and tolerations or node affinity rules that are on them.
 
 ---
 
-There are different offices in the dock that are assigned to special tasks or departments. For example, the operations team takes care
-of ship handling, traffic control and ... . They deal with issues related to damages, the route the different ships take and ... .
+There are different offices in the dock that are assigned to special tasks or departments. For example:
 
-The cargo team takes care of containers. When containers are damaged or destroyed, they make sure new containers are made available.
+- the operations team takes care of ship handling, traffic control and ... . They deal with issues related to damages,
+the route the different ships take and ... . 
+- The cargo team takes care of containers. When containers are damaged or destroyed, they make sure new containers are made available. 
+- The services office takes care of IT communications between different ships(nodes).
 
-The services office takes care of IT communications between different ships(nodes). Similarly, in K8S we have controllers available that take care
-of different areas. The node controller takes care of nodes. They're responsible for onboarding new nodes to the cluster, handling situations where
-nodes become unavailable, or get destroyed.
-The **replication controller** ensures that the desired number of containers are running at all times in a replication group.
+Similarly, in K8S we have controllers available that take care of different areas:
+
+- The **node controller** takes care of nodes. They're responsible for onboarding new nodes to the cluster, handling situations where
+nodes become unavailable, or get destroyed. 
+- The **replication controller** ensures that the desired number of containers are running at all times in a replication group.
 
 ---
+
+#### kube-apiserver
 
 How do these components communicate with each other? How does one office reach to another office and who manages them all at a high level?
 
-A: The **kube API server** is the primary management component of k8s. It's responsible for orchestrating all operations within the cluster.
-It exposes the K8S API which is used by external users to perform management operations on the cluster as well as various controllers to monitor
-the state of the cluster and make necessary changes as required. And by the worker nodes to communicate with the server.
+A: The **kube-apiserver** is the primary management component of k8s. It's responsible for orchestrating all operations within the cluster.
+It exposes the K8S API which is used by:
+1. external users to perform management operations on the cluster 
+2. as well as used by various controllers to monitor the state of the cluster and make necessary changes as required
+3. And by the worker nodes to communicate with the server.
 
 ---
+
 We're working with containers and they are everywhere. So we need everything to be container compatible. Our applications are in form of containers.
 The different components that form the entire management system on the master node could be hosted in the form of containers. The DNS service,
 networking solution can all be deployed in the form of containers. So we need this software that can run containers and that's the container
-runtime engine, a popular one being docker. So we need docker or it's supported equivalent installed on all the nodes in the cluster, including
-the master nodes, if you wish to host the controlling components as containers. Now it doesn't always have to be docker. K8S supports other container runtime
+runtime engine, a popular one being docker. **So we need docker or it's supported equivalent installed on all the nodes in the cluster, including
+the master nodes, if you wish to host the controlling components as containers.** Now it doesn't always have to be docker. K8S supports other container runtime
 engines like containerD, rkt.
 
 ---
+
+### Worker node components
+
 Now let's focus on cargo ships.
 
-Every ship has a captain. The captain is responsible for managing all activities on these ships. The captain is responsible for liasing with the master ships,
+#### Kubelet
+
+Every ship has a captain. The captain is responsible for managing all activities on these ships. The captain is responsible for communicating with the master ships,
 starting with letting the master ship know that they're interested in joining the group, receiving info about the containers to be loaded
 on the ship and loading the appropriate containers as required, sending reports back to the master about the status of this ship and the status of containers
 on the ship.
@@ -72,13 +90,16 @@ The captain of the ship is the kubelet in K8S. A kubelet is an agent that runs o
 kube API server and deploys or destroys containers on the nodes as required. The **kube API server**(which is on the master node) periodically fetches status reports
 from the kubelet to monitor the status of nodes and containers on them.
 
+#### kube-proxy
+
 The kubelet was more of a captain on the ship that manages containers on the ship. But the applications running on the worker nodes, need to be able
 to communicate with each other. For example, you might have a web server running in one container on one of the nodes and a DB server
 running on another container on another node. How would the web server reach the DB server from the other node?
-Communication between worker nodes are enabled by another component that runs on the worker node known as the **kube proxy service**.
-The kube proxy service ensures that the necessary rules are in place on the worker nodes to allow the containers running on them to reach each other.
+**Communication between worker nodes** are enabled by another component that runs on the worker node known as the **kube-proxy** service.
+The kube-proxy service ensures that the necessary rules are in place on the worker nodes to allow the containers running on them to reach each other.
 
 ---
+
 recap:
 
 We have master and worker nodes:
