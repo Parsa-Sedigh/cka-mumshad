@@ -134,14 +134,14 @@ The practice test environments are deployed using the kubeadm tool and later in 
 ### Setup - manual
 If you set up your cluster from scratch, then you deploy etcd by downloading the etcd binaries yourself, installing the binaries and configuring etcd
 as a service in your master node yourself. There are many options passed into this service. A number of them relate to certificates.
-One option is `--advertise-client-urls https://${INTERNAL_IP}:2379` which is the address on which etcd listens. In this examaple, it happens to be
+One option is `--advertise-client-urls https://${INTERNAL_IP}:2379` which is the address on which etcd listens. In this example, it happens to be
 on the IP of the server and on port 2379 which is the default port on which etcd listens. This is the url that should be configured on the
 kube API server when it tries to reach the etcd server.
 
 ### Setup - kubeadm
 If you set up your cluster using kubeadm, then kubeadm deploys the etcd server for you as a pod in the kube-system namespace.
 
-To list all keys stored by k8s, run:
+To list all keys stored by k8s in etcd DB, run:
 ```shell
 kubectl exec etcd-master –n kube-system etcdctl get / --prefix –keys-only
 ```
@@ -276,16 +276,17 @@ In k8s terms, a controller is a process that continuously monitors the state of 
 the whole system to the desired functioning state.
 
 #### Node controller
-For example, the node controller is responsible for monitoring the status of the nodes
-and taking necessary actions to keep the applications running. It does that through the kube API server. The node controller checks the status
+For example, the node controller is responsible for **monitoring the status of the nodes** and taking necessary actions to keep the applications running.
+It does that through the kube API server. The node controller checks the status
 of nodes every 5 seconds. That way the node controller can monitor the health of the nodes. If it stops receiving heartbeat from a node,
 the node is marked as unreachable. But it waits for 40 seconds before marking it unreachable.
+
 After a node is marked unreachable, it gives it 5 minutes to come back up. If it doesn't, it removes the PODs assigned to that node and provisions
 them on the healthy ones if the PODs are part of a replica set.
 
 #### Replication controller
-Responsible for monitoring the status of replica sets and ensuring that the desired number of pods are available at all times within the set.
-If a pod dies, it creates another one.
+**Responsible for monitoring the status of replica sets and ensuring that the desired number of pods are available at all times within the set.
+If a pod dies, it creates another one.**
 
 There are other controllers. Whatever concepts we have seen so far in k8s such as deployments, services, namespaces or persistent volumes and
 whatever intelligence is built into these constructs, it is implemented through these various controllers. So this is kinda like a brain
@@ -315,9 +316,9 @@ ps -aux | grep kube-controller-manager
 ```
 
 ## 17 - Kube Scheduler
-Responsible for scheduling pods on nodes. Remember the scheduler is only responsible for **deciding** which pods goes on which node.
-It doesn't actually place the pod on the nodes. That's the job of the kubelet. The kubelet or the captain on the ship,
-is who creates the pod on ships(worker nodes). The scheduler only decides which pod goes where.
+Responsible for scheduling pods on nodes. Remember **the scheduler is only responsible for deciding which pods goes on which node.
+It doesn't actually place the pod on the nodes. That's the job of the kubelet.** The **kubelet** or the captain on the ship,
+**is who creates the pod** on ships(worker nodes). The scheduler only decides which pod goes where.
 
 ### kube-scheduler
 Q: Why do you need a scheduler?
@@ -330,7 +331,7 @@ requirements. You can have nodes in the cluster dedicated to certain application
 
 Q: How does the scheduler assign these pods?
 
-A: The scheduler looks at each pod and tries to find the best node for it. The scheduler goes through 2 phases to identify the best node for the pod:
+A: The scheduler looks at each pod and tries to find the best node for it. **The scheduler goes through 2 phases to identify the best node for the pod:**
 1. filter nodes: the scheduler tries to filter out the nodes that do not fit the profile for this pod. For example, the nodes that do not have
 sufficient CPU and memory resources requested by the pod. Some of the nodes are filtered out in this phase.
 2. rank nodes: rank the nodes to identify the best fit for the pod. It uses a priority function to assign a score to the nodes on a scale of zero to 10
@@ -356,9 +357,9 @@ ps -aux | grep kube-scheduler
 ```
 
 ## 18 - Kubelet
-Kubelet is like the captain on the ship. They're responsible for doing all the paperwork necessary to become part of the cluster. They're the sole
-point of contact from the mastership. They load or unload containers on the ship as instructed by the scheduler on the master. They also
-send back reports at regular intervals on the status of the ship and the containers on them.
+Kubelet is like the captain on the ship. **They're responsible for doing all the paperwork necessary to become part of the cluster.** They're the sole
+point of contact from the mastership. **They load or unload containers on the ship as instructed by the scheduler on the master. They also
+send back reports at regular intervals on the status of the ship and the containers on them.**
 
 The kubelet in the k8s worker node, registers the node with a k8s cluster. When it receives instructions to load a container or a pod on the node,
 it requests the container runtime engine, which may be docker, to pull the required image and run an instance. The kubelet then continues to monitor
@@ -387,8 +388,8 @@ reach the service using it's IP or name, it forwards the traffic to the backend 
 how does it get an IP? Does the service join the same pod network? The service cannot join the pod network, because the service is not an actual thing,
 it's not a container like pods, so it doesn't have any interfaces or an actively listening process. It is a virtual component that only lives
 in the k8s memory. But then we also said that the service should be accessible across the cluster from any nodes. So how is that achieved?
-That's where kube-proxy comes in. Kube-proxy is a process that runs on each node in the k8s cluster. it's job is to look for new services and everytime
-a new service is created, it creates the appropriate rules on each node to forward traffic to those services to the backend pods.
+That's where kube-proxy comes in. **Kube-proxy is a process that runs on each node in the k8s cluster. It's job is to look for new services and everytime
+a new service is created, it creates the appropriate rules on each node to forward traffic to those services to the backend pods.**
 One way it does this, is using IPtables rules. In this case, it creates an iptables rule on each node in the cluster to forward traffic heading
 to the IP of the service(which in img is 10.96.0.12) to the IP of the actual pod(in img is 10.32.0.15).
 
@@ -495,7 +496,7 @@ k describe pod <pod-name>
 ## 22 - Demo PODs with YAML
 If you're creating a new object, the `kubectl create` and `kubectl apply` commands work the same.
 ```shell
-k appply -f <path to yaml file>
+k apply -f <path to yaml file>
 ```
 
 ## 23 - Practice Test Introduction
@@ -537,12 +538,12 @@ we deploy additional pod to balance the load across two pods. If the demand furt
 we could deploy additional pods across the other nodes in the cluster. So the replication controller spans across multiple nodes in the cluster.
 It helps us balance the load across multiple pods on different nodes as well as scale our app when the demand increases.
 
-Replication controller and replica set have the same purpose, but they're not the same. Replication controller is the older technology that is being
-replaced by replica set. Replica set is the new recommended way to set up replication. There are minor differences in the way each works.
+Replication controller and replica set have the same purpose, but they're not the same. **Replication controller is the older technology that is being
+replaced by replica set. Replica set is the new recommended way to set up replication.** There are minor differences in the way each works.
 
 Create a replication controller: 28-1 folder.
 
-**Note:** The `apiVersion` is specific to what object we're creating. In this case, replication controller is supported in k8s apiVersion v1.
+Note: **The `apiVersion` is specific to _what_ object we're creating.** In this case, replication controller is supported in k8s apiVersion v1.
 
 For any k8s definition file, the `spec` section defines what's inside the object we're creating.
 
@@ -565,9 +566,9 @@ One major difference between replication controller and replica set is that repl
 The selector section helps the replicaset identify what pods fall under it. But why would you have to specify what pods fall under it, if you
 have provided the contents of the pod definition file itself in the `template`?
 
-Because replicaset can also manage pods that were not created as part of the replicaset creation. For example: There were pods created before the
+**Because replicaset can also manage pods that were not created as part of the replicaset creation. For example: There were pods created before the
 creation of the replicaset that match labels specified in the `selector`, the replica set will also take those pods into consideration when
-creating the replicas.
+creating the replicas.**
 
 The `selector` is not a required field in replication controller. When you skip it, it assumes it to be the same as the labels provided in the
 pod definition file.
@@ -581,7 +582,7 @@ k create -f <path to replicaset definition file>
 k get replicaset
 ```
 
-One of the use cases of replica sets is we can use it to monitor existing pods if we have them(pods) already created.
+One of the use cases of **replica sets** is we can use it **to monitor** existing pods if we have them(pods) already created.
 
 ### Labels and selectors
 Why do we label our pods and objects in k8s?
@@ -601,8 +602,8 @@ as what we defined at all times. Now when the replication controller or replica 
 as we have the right number of them with matching labels are already created. In that case, do we really need to provide the `template` section
 in replica set definition? Since we're not expecting the replica set to create a new pod on deployment?
 
-A: Yes, we do. because in case one of the pods were to fail in the future, the replica set needs to create a new one to maintain the desired number of
-pods and to create it, the replica set needs the template definition section.
+A: Yes, we do. because in case one of the pods were to fail in the future, **the replica set needs to create a new one to maintain the desired number of
+pods and to create it, the replica set needs the template definition section.**
 
 ### Scale
 How do we scale the replica set? How do we update the replica set to increase the number of replicas ?
@@ -627,21 +628,43 @@ TODO
 ## 31 - Deployments
 How you might want to deploy your app in a production env?
 
-You need not one but many instances of your app running for obvious reasons. Secondly, whenever newer versions of application builds become
-available on the docker registry, you would like to upgrade your docker instances(container images) seamlessly. However, when you upgrade
-your instances, you do not want to upgrade all of them at once. Because this may impact users accessing our apps. so you might
-want to upgrade them **one after the other**. This kind of update is known as **rolling updates**.
-Suppose one of the upgrades you performed, resulted in an unexpected error and you're asked to undo the recent change, you would like to be able
-to **roll back** the changes that were recently carried out. Finally, say for example, you would like to make multiple changes to your environment,
-such as upgrading the underlying web server versions, as well as scaling your environment and also modifying the resource allocations and ... .
-You do not want to apply each change immediately after the command is run, instead, you would like to apply a pause to your environment, make the changes
-and then resume, so that all the changes are rolled out together.
+As you already know: You need multiple instances of your application running at the same time.
+This ensures high availability (if one fails, others continue serving users) and better handling of traffic.
 
-All of these capabilities are available with the k8s deployments.
+k8s deployment capabilities:
+
+### Zero-Downtime Rolling Updates with configurable settings
+When a new version of your application (a newer container image) becomes available in your registry, 
+you want to upgrade the running instances seamlessly — but **without replacing all of them at once**, as that could cause downtime or disrupt users.
+
+Kubernetes Deployments solve this with **rolling updates** (the default strategy).
+
+They replace old Pods gradually (one by one or in small batches, depending on your configuration).
+
+- New Pods start, pass readiness checks, and join service traffic before old Pods are terminated. 
+- This keeps your application available throughout the update process (zero or near-zero downtime). 
+- You can fine-tune the process using settings like `maxUnavailable` (how many Pods can be down during the update)
+and `maxSurge` (how many extra Pods can temporarily exist).
+- old pods get removed gradually
+
+If the upgrade introduces problems (e.g., bugs, crashes, or instability), Deployments let you roll back easily:
+- They maintain a history of revisions (each change creates a new one). 
+- Use a single command (kubectl rollout undo deployment/<name>) to revert to any previous stable version. 
+- The old ReplicaSet is scaled back up, and the problematic one is scaled down — fast and automated.
 
 We know with pod, we deploy single instance of our app. Each container is encapsulated in a pod. Multiple such pods are deployed using replication controllers
 or replica sets and then deployments come higher in the hierarchy. The deployment provides us with the capability to upgrade the underlying instances
 seamlessly using rolling updates, undo changes and pause and resume changes as required.
+
+### Batch Multiple Changes with Pause & Resume
+When you need to make multiple changes at once (e.g., upgrade the container image, scale the number of replicas, 
+adjust CPU/memory requests/limits, update environment variables, or modify other Pod template fields):
+- You don't want each individual change to trigger its own separate rollout and Pod restarts.
+- Instead, pause the Deployment first (`kubectl rollout pause deployment/<name>`).
+- This tells Kubernetes to hold off on any automatic rollouts — current Pods remain unchanged and serving traffic.
+- Apply all your updates (via kubectl edit, kubectl set, or kubectl apply with a new YAML).
+- When everything is ready, resume (`kubectl rollout resume deployment/<name>`).
+- Kubernetes then performs one coordinated rolling update that applies all changes together.
 
 The contents of deployment definition file is exactly the same as replica set definition file except for the `kind`.
 
@@ -797,7 +820,7 @@ A random algo. Thus the service acts as a built-in load balancer to distribute l
 Q: What happens when pods are distributed across multiple nodes? So we have web apps on pods that are on separate nodes in the cluster.
 
 When we create a service, without us having to do any additional configuration, k8s automatically creates a service that spans across all the nodes
-in the cluster and maps the targetPort to the same nodePort on all the nodes in the cluster. This way you can access your app using the IP of any
+in the cluster and **maps** the targetPort to the same nodePort on all the nodes in the cluster. This way you can access your app using the IP of any
 node in the cluster and using the same port number(in img is 30008). Look at the img, for doing curl, the IPs are different and we use the same port 30008.
 
 So in any case, whether it be a single pod on a single node, multiple pods on a single node, or multiple pods on multiple nodes, the service
@@ -937,29 +960,24 @@ kubectl run nginx --image=nginx
 ```
 
 Generate POD Manifest YAML file (-o yaml). Don't create it(--dry-run)
-
+```shell
 kubectl run nginx --image=nginx --dry-run=client -o yaml
-
-
+```
 
 Deployment
 Create a deployment
 
+```shell
 kubectl create deployment --image=nginx nginx
-
-
+```
 
 Generate Deployment YAML file (-o yaml). Don't create it(--dry-run)
 
 kubectl create deployment --image=nginx nginx --dry-run=client -o yaml
 
-
-
 Generate Deployment with 4 Replicas
 
 kubectl create deployment nginx --image=nginx --replicas=4
-
-
 
 You can also scale a deployment using the kubectl scale command.
 
@@ -969,13 +987,10 @@ Another way to do this is to save the YAML definition to a file and modify
 
 kubectl create deployment nginx --image=nginx --dry-run=client -o yaml > nginx-deployment.yaml
 
-
-
 You can then update the YAML file with the replicas or any other field before creating the deployment.
 
-
-
 Service
+
 Create a Service named redis-service of type ClusterIP to expose pod redis on port 6379
 
 kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml
@@ -1013,34 +1028,56 @@ https://kubernetes.io/docs/reference/kubectl/conventions/
 ## 46 - Solution Imperative Commands optional
 ## 47 - Kubectl Apply Command
 ### Kubectl apply
-The `apply` command takes into consideration:
-1. the local configuration file(what's stored on our local system)
-2. the live object definition on k8s(in k8s memory)
-3. the last applied configuration. This is stored on live object configuration on the k8s cluster itself, as 
-an annotation named `kubectl.kubernetes.io/last-applied-configuration`
-before making a decision on what changes are to be made.
+When you run `kubectl apply`, Kubernetes does more than just create or update an object. 
+It uses a smart **three-way comparison** to figure out exactly **what should change**.
+
+K8s maintains three versions of the object configuration at the same time:
+1. Local configuration
+   This is the YAML file on your computer (the one you edit and apply). 
+   It represents what you want right now (your desired state).
+2. Live configuration
+   This is the actual object stored in the Kubernetes cluster (what you see with `kubectl get ... -o yaml`).
+   It includes:
+   - Everything from your local file
+   - Extra fields Kubernetes adds automatically (like `.status`, `.metadata.uid`, timestamps, resourceVersion, etc.)
+   - This is the real, running state of the object.
+3. Last-applied configuration
+   This is a saved copy (in JSON format) of exactly what your local file looked like the last time you ran kubectl apply.
+   Kubernetes stores it inside the live object as an annotation:
+   kubectl.kubernetes.io/last-applied-configuration: "{...}"
+   **It only gets created or updated when you use kubectl apply (not create, replace, or edit).**
+
+#### Why do we need the last-applied configuration?
+It’s mainly needed to correctly handle removals (deleting fields).
+
+When you run `kubectl apply`:
+
+Kubernetes compares all three:
+
+- Local (desired now)
+- Last-applied (desired previously)
+- Live (actual now)
+
+- Adding or changing a field: If the value in local is different from live, Kubernetes updates the live object.
+- Removing a field: If a field exists in **last-applied** but is missing from **local**, Kubernetes knows you intentionally
+removed it -> it deletes the field from the **live** object.
+
+Without the last-applied configuration:
+
+If a field is missing from local but present in live, Kubernetes wouldn’t know whether:
+
+- You want it removed (you deleted it on purpose), or
+- It’s a system-generated field you never managed (should be left alone).
+
+So it would leave it unchanged, which is wrong for user-managed fields.
 
 So when you run the apply command, if the object does not already exist, the object is created and then an object configuration similar to what we created
 locally, is created within k8s, but with additional fields to store status of the object(look at the right side(live object configuration) in the img).
 That is the live configuration of the object on k8s cluster. This is how k8s internally stores info about an object no matter what approach you use
 to create the object.
 
-But when you use kubectl apply, it does sth a bit more. The yaml version of local object config file we wrote, is converted to a json format and it is then
-stored as the last applied configuration. Going forward, for any updates to the object, all the three are compared to identify what changes are
-to be made on the live object.
-
-Q: Why do we need the last applied configuration?
-
-If a field is removed and we run `kubectl apply`, we see last applied configuration had a label, but it's not present in the local configuration.
-This means that the field needs to be removed from the live configuration. So if a field was present in the live configuration and not present in
-the local or the last applied configuration, then it will be left as is. But if a field is missing from the local file and it is present
-in the last applied configuration, that field will be removed from the live configuration. So the last applied configuration helps us
-figure out what fields have been removed from the local file and those fields will be removed from the live config.
-
-Note: The storing of last applied config only happens when you use `kubectl apply`. The `kubectl create` or `kubectl replace` commands do not
-store the last applied configuration in the `last-applied-configuration`. So remember not to mix the imperative and declarative approaches while managing
-the k8s objects. So once you used the apply command, going forward, whenever a change is made, the `apply` command compares all
-three sections(local, live and last applied configs(which is inside the live config file as an annotation)), for deciding what changes
-are to be made to the live config
+- This smart removal only works reliably if you always use kubectl apply after the first creation.
+- Commands like kubectl create, kubectl replace, or manual edits do not update the last-applied annotation → mixing them can break declarative behavior.
+- Once you start with apply, stick to apply for all future changes.
 
 ## 48 - Heres some inspiration to keep going
