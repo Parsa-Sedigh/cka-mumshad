@@ -7,8 +7,8 @@
 ## 51 - Manual Scheduling
 ### How scheduling works?
 Every pod has a field called `nodeName` that by default is not set, k8s adds it automatically. The scheduler goes through all the pods
-and looks for those that do not have this property set. Those are the candidates for scheduling. It then identifies the right node for the pod by
-running the scheduling algorithm. Once identified, it schedules the pod on the node by setting the nodeName property to the name of the node by creating a
+and looks for those that **do not have this property set**. **Those are the candidates for scheduling**. It then identifies the right node for the pod by
+running the scheduling algorithm. Once identified, it schedules the pod on the node by setting the `nodeName` property to the name of the node by creating a
 binding object.
 
 ### No scheduler!
@@ -24,6 +24,11 @@ what the actual scheduler does.
 In the binding object, you specify a target node(using `target`) with the name of the node(`target.node` like node02). Then send a POST req
 to the pod's binding api with the `data` set to the binding object in a json format. So you must convert the yaml file into it's equivalent
 JSON form(look at the slide's curl).
+
+```shell
+# get the master node pods
+kubectl get pods --namespace=kube-system
+```
 
 ## 52 - Practice Test Manual Scheduling
 ## 53 - Solution Manual Scheduling optional
@@ -51,15 +56,15 @@ limitations for now). The scheduler places the pods across all the nodes to bala
 
 Now let's assume that we have dedicated resources on node 1 for a particular use case or application. So we would like only those pods that
 belong to this application to be placed on node 1. First, we prevent all pods from being placed on node 1 by placing a taint on the node. Let's
-call this taint, blue. By default, pods have no tolerations which means unless specified otherwise, none of the pods can tolerate any taint.
-So in this case, none of the pods can be placed on node 1, as none of them can tolerate the taint blue. This solves half of our requirements.
+call this taint, blue. **By default, pods have no tolerations which means unless specified otherwise, none of the pods can tolerate any taint.**
+So in this case, none of the pods can be placed on node 1, as none of them can tolerate the taint blue. **This solves half of our requirements.
 No unwanted pods are going to be placed on this node(node 1). The other half is to enable certain pods to be placed on this node.
-For this, we must specify which pods are tolerant to this particular taint. In our case, we would like to allow only pod D to be placed on this node.
+For this, we must specify which pods are tolerant to this particular taint.** In our case, we would like to allow only pod D to be placed on this node.
 So we add a toleration to pod D. Pod D is now tolerant to blue. So when the scheduler tries to place this pod on node 1, it goes through.
 Node 1 can now only accept pods that can tolerate the taint blue. Now for example, the scheduler tries to place pod A on node 1, but due to the
 taint, it's thrown off and it goes to node 2 and ... .
 
-Taints are set on nodes and tolerations are set on pods.
+**Taints are set on nodes and tolerations are set on pods.**
 
 ### Taints - node
 For example if you would like to dedicate the node to pods in `app: blue`(that have this toleration), then the key-value pair would be:
@@ -78,12 +83,12 @@ After adding the toleration, the pods created or updated with that definition, t
 existing nodes depending on the effect set.
 
 ### Taint - NoExecute
-Remember: Taints and tolerations are only meant to restrict nodes from accepting certain pods. But it does not guarantee that for example in our case,
-pod D will always be placed on node 1. Since there are no taints or restrictions applied on other two nodes, pod D may very well be placed
+Remember: Taints and tolerations are only meant to **restrict** nodes from accepting certain pods. But it does not guarantee that for example in our case,
+pod D will always be placed on node 1. **Since there are no taints or restrictions applied on other two nodes, pod D may very well be placed
 on any of the other two nodes(although having a toleration). So remember taints and tolerations does not tell the pod to go to a particular node.
-Instead, it tells the node to only accept pods with certain tolerations.
+Instead, it tells the node to only accept pods with certain tolerations.**
 
-if your requirement is to restrict a pod to certain nodes, it is achieved through another concept called as **node affinity**.
+If your requirement is to restrict a pod to certain nodes, it is achieved through another concept called as **node affinity**.
 
 Master node has all the capabilities of hosting a pod, plus it runs all the management software. The scheduler doesn't schedule any pods on the
 master node. Why?
@@ -97,7 +102,18 @@ kubectl describe node kubemaster | grep Taint
 
 The taint side effect for master node is `NoSchedule`.
 
+When to Use Which (or Both)
+
+- Just want certain pods on certain nodes (but other pods can also go there) -> Use node affinity (or even the simpler nodeSelector).
+- Want to reserve / dedicate nodes so only specific workloads can run there -> Use taints + tolerations (repels everyone else) . Note that
+nodes with tolerations could end up somewhere else as well.
+Almost always combine with node affinity (to actually attract the desired pods). This is the most common pattern for dedicated node groups in production.
+
 ## 58 - Practice Test Taints and Tolerations
+```shell
+k taint nodes node01 spray=mortein:NoSchedule
+```
+
 ## 59 - Solution Taints and Tolerations Optional
 ## 60 - Node Selectors
 Let's say we have a three node cluster of which two are smaller nodes with lower hardware resources and you have different kinds of workloads
@@ -120,7 +136,7 @@ To label a node, we use key-value pairs:
 kubectl label nodes <node-name> <label-key>=<label-value>
 ```
 Now that we have labeled the node(s), we can get back to creating the pod, this time with the `nodeSelector` with the same label. When the pod is created,
-it's no placed on the nodes with the matching label.
+it's now placed on the nodes with the matching label.
 
 Node selectors served our purpose, but it has limitations. What if our requirement is much more complex? For example, we would like to say sth like:
 "Place the pod on a large or medium node" or "place the pod on any nodes that are not small". You cannot achieve this using node selectors.
@@ -154,23 +170,18 @@ the affinity rules specified are considered to place the pods on the right nodes
 What if the nodes with matching labels are not available? For example, we forgot to label the node as large. That is where the type of node affinity
 used, comes into play.
 
-requiredDuringScheduling:
-
-If you select the required type(first one), the scheduler will mandate that the pod be placed on a node with the given
+**requiredDuringScheduling:** If you select the required type(first one), the scheduler will mandate that the pod be placed on a node with the given
 affinity rules. If it cannot find one, the pod will not be scheduled. This type will be used in cases where the placement of the pod is **crucial**.
 If a matching node does not exist, the pod will not be scheduled.
 
-preferredDuringScheduling:
-
-But let's say the pod placement is less important than running the workload itself. In that case, you could set it to `preferred` and in cases
-where a matching node is not found, the scheduler will simply ignore node affinity rules and place the pod on any available node. This is a way of
+**preferredDuringScheduling:** But let's say the pod placement is less important than running the workload itself.
+In that case, you could set it to `preferred` and in cases where a matching node is not found, the scheduler will
+simply ignore node affinity rules and place the pod on any available node. This is a way of
 telling the scheduler: "Hey, try your best to place the pod on matching node. But if you really cannot find one, just place it anywhere."
 
-Second part(IgnoredDuringExecution):
-
-During execution is the state where a pod has been running and a change is made in the environment that affects node affinity, such as a change
-in the label of a node. For example, say an administrator removed the label we set earlier called **size=large** from the node. Now what would
-happen to the pods that are running on the node?
+**Second part(IgnoredDuringExecution):** During execution is the state where a pod has been running and a change is made in
+the environment that affects node affinity, such as a change in the label of a node. For example, say an administrator
+removed the label we set earlier called **size=large** from the node. Now what would happen to the pods that are running on the node?
 
 The two types of node affinity available today(not that one planned), has this value set to ignored, which means pods will continue to run
 and any changes in node affinity, will not impact them once they are scheduled.
@@ -203,9 +214,9 @@ It's the k8s scheduler that decides which node a pod goes to.
 If there's no sufficient resources available on any of the nodes, k8s holds back scheduling the pod. You will see the pod in a `pending` state
 and there would be a reason in the events.
 
-By default, k8s assumes that a pod or a container within a pod, requires .5 cpu and 256 mebibyte of memory(256Mi). This is known as the 
-resource request for a container(minimum amount of cpu and memory requested by the container). This is assumed that you have set a LimitRange in that
-namespace.
+**By default, k8s assumes that a pod or a container within a pod, requires .5 cpu and 256 mebibyte of memory(256Mi) (we have to create a
+LimitRange in that namespace first).** This is known as the resource request for a container(minimum amount of cpu and memory requested by the container).
+This is assumed that you have set a LimitRange in that namespace.
 
 You can specify these resources on pod or deployment definition files.
 
@@ -220,24 +231,24 @@ One count of CPU(cpu: 1) is equivalent to one vCPU. That's one vCPU in aws or on
 
 G is gigabyte and it refers to 1000 megabytes whereas GI is gibibyte and refers to 1024 mebibytes.
 
-In the docker world, a docker container has no limit to the resources it can consume on a node. Say a container starts with one vCPU on a node.
+**In the docker world, a docker container has no limit to the resources it can consume on a node.** Say a container starts with one vCPU on a node.
 It can go up and consume as much resource as it requires, suffocating the native processes on the node or other containers, of resources.
 However, you can set a limit for the resource usage on these pods.
 
-By default, k8s sets a limit of one vCPU(of the node) and 512 mebibytes to containers. To override the limits, use `limits` under `resources` in the
+**By default, k8s sets a limit of one vCPU(of the node) and 512 mebibytes to containers.** To override the limits, use `limits` under `resources` in the
 pod definition file. When the pod is created, k8s sets new limits for the container.
 
 Note: requests and limits are set for each container within the pod.
 
-Q: What happens when a pod trie to exceed resources beyond it's specified limit?
+Q: What happens when a pod tries to exceed resources beyond it's specified limit?
 
 A: In case of CPU, k8s throttles the CPU, so that it does not go beyond the specified limit. A container cannot use more CPU resources
-than it's limit. However, this is not the case with tbe memory. A container **can** use more memory resources than it's limit. So if a pod
+than it's limit. However, this is not the case with the memory. A container **can** use more memory resources than it's limit. So if a pod
 tries to consume more memory than it's limit constantly, the pod will be terminated.
 
 ## 66 - Note on default resource requirements and limits
-In the previous lecture, I said - "When a pod is created the containers are assigned a default CPU request of .5 and memory of 256Mi". 
-For the POD to pick up those defaults you must have first set those as default values for request and limit by creating a LimitRange in that namespace.
+**In the previous lecture, I said - "When a pod is created the containers are assigned a default CPU request of .5 and memory of 256Mi". 
+For the POD to pick up those defaults you must have first set those as default values for request and limit by creating a LimitRange in that namespace.**
 
 Look at 66-1 and https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/memory-default-namespace/
 
@@ -317,7 +328,7 @@ of our applications are made available across different worker nodes. DaemonSets
 of pods, but it runs one copy of your pod, on each node in your cluster. Whenever a new node is added  to the cluster, a replica of the pod
 is automatically added to that node and when a node is removed, the pod on that node is automatically removed.
 
-The daemonSet ensures that one copy of the pod is always present in all nodes in the cluster.
+**The daemonSet ensures that one copy of the pod is always present in all nodes in the cluster.**
 
 ### daemonSets - use case
 What are some use cases of daemonSets?
@@ -432,10 +443,10 @@ kubectl get pods -n kube-system
 ```
 
 ### Static pods vs daemon sets
-daemon sets are used to ensure one instance of an application is available on all nodes in the cluster. It has handled by a daemon set controller
+**daemon sets are used to ensure one instance of an application is available on all nodes in the cluster. It has handled by a daemon set controller
 through the kube-apiserver. Whereas static pods are created directly by kubelet without any interference from the kube-apiserver or rest of the
 k8s control plane components. Static pods can be used to deploy the k8s control plane components itself. Both static pods and pods created
-by daemon sets, are ignored by the kube-scheduler. The kube-scheduler has no effect on these pods.
+by daemon sets, are ignored by the kube-scheduler. The kube-scheduler has no effect on these pods.**
 
 ## 74 - Practice Test Static Pods
 ## 75 - Solution Static Pods Optional
